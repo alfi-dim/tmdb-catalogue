@@ -11,22 +11,24 @@ class FavoriteMovieSearchPresenter {
     });
   }
 
-  _searchMovies(latestQuery) {
+  async _searchMovies(latestQuery) {
     this._latestQuery = latestQuery;
-    this._favoriteMovies.searchMovies(this.latestQuery);
+
+    const foundMovies = await this._favoriteMovies.searchMovies(this.latestQuery);
+
+    this._showFoundMovies(foundMovies);
   }
 
   // eslint-disable-next-line class-methods-use-this
   _showFoundMovies(movies) {
     const html = movies.reduce(
-      (carry, movie) => carry.concat(`
-        <li class="movie">
-            <span class="movie__title">${movie.title || '-'}</span>
-        </li>
-      `),
+      (carry, movie) => carry.concat(`<li class="movie"><span class="movie__title">${movie.title || '-'}</span></li>`),
       '',
     );
+
     document.querySelector('.movies').innerHTML = html;
+    document.getElementById('movie-search-container')
+      .dispatchEvent(new Event('movies:searched:updated'));
   }
 
   get latestQuery() {
