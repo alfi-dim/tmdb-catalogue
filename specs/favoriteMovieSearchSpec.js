@@ -1,9 +1,12 @@
+/* eslint-disable class-methods-use-this */
 import FavoriteMovieSearchPresenter from '../src/scripts/views/pages/liked-movies/favorite-movie-search-presenter';
 import FavoriteMovieIdb from '../src/scripts/data/favorite-movie-idb';
+import FavoriteMovieSearchView from '../src/scripts/views/pages/liked-movies/favorite-movie-search-view';
 
 describe('Searhing movies', () => {
   let presenter;
   let favoriteMovies;
+  let view;
 
   const searchMovies = (query) => {
     const queryElement = document.getElementById('query');
@@ -12,20 +15,15 @@ describe('Searhing movies', () => {
   };
 
   const setMovieSearchContainer = () => {
-    document.body.innerHTML = `
-            <div id="movie-search-container">
-              <input id="query" type="text">
-              <div class="movie-result-container">
-                <ul class="movies">
-                </ul>
-              </div>
-            </div>
-          `;
+    view = new FavoriteMovieSearchView();
+    document.body.innerHTML = view.getTemplate();
   };
+
   const constructPresenter = () => {
     favoriteMovies = spyOnAllFunctions(FavoriteMovieIdb);
     presenter = new FavoriteMovieSearchPresenter({
       favoriteMovies,
+      view,
     });
   };
   beforeEach(() => {
@@ -46,36 +44,10 @@ describe('Searhing movies', () => {
       expect(favoriteMovies.searchMovies).toHaveBeenCalledWith('film a');
     });
 
-    it('should show the found movies', () => {
-      presenter._showFoundMovies([{ id: 1 }]);
-      expect(document.querySelectorAll('.movie').length).toEqual(1);
-
-      presenter._showFoundMovies([{ id: 1, title: 'Satu' }, { id: 2, title: 'Dua' }]);
-      expect(document.querySelectorAll('.movie').length).toEqual(2);
-    });
-
-    it('should show the title of the found movies', () => {
-      presenter._showFoundMovies([{ id: 1, title: 'Satu' }]);
-      expect(document.querySelectorAll('.movie__title').item(0).textContent)
-        .toEqual('Satu');
-      presenter._showFoundMovies(
-        [{ id: 1, title: 'Satu' }, { id: 2, title: 'Dua' }],
-      );
-      const movieTitles = document.querySelectorAll('.movie__title');
-      expect(movieTitles.item(0).textContent).toEqual('Satu');
-      expect(movieTitles.item(1).textContent).toEqual('Dua');
-    });
-
-    it('should show - for found movie without title', () => {
-      presenter._showFoundMovies([{ id: 1 }]);
-      expect(document.querySelectorAll('.movie__title').item(0).textContent)
-        .toEqual('-');
-    });
-
     it('should show the movies found by Favorite Movies', (done) => {
-      document.getElementById('movie-search-container')
-        .addEventListener('movies:searched:updated', () => {
-          expect(document.querySelectorAll('.movie').length).toEqual(3);
+      document.getElementById('movies')
+        .addEventListener('movies:updated', () => {
+          expect(document.querySelectorAll('.movie-item').length).toEqual(3);
           done();
         });
 
@@ -89,7 +61,7 @@ describe('Searhing movies', () => {
     });
 
     it('should show the name of the movies found by Favorite Movies', (done) => {
-      document.getElementById('movie-search-container').addEventListener('movies:searched:updated', () => {
+      document.getElementById('movies').addEventListener('movies:updated', () => {
         const movieTitles = document.querySelectorAll('.movie__title');
         expect(movieTitles.item(0).textContent).toEqual('film abc');
         expect(movieTitles.item(1).textContent).toEqual('ada juga film abcde');
@@ -106,7 +78,21 @@ describe('Searhing movies', () => {
 
       searchMovies('film a');
     });
-    // ... Pemangkasan
+
+    it('should show - when the movie returned does not contain a title', (done) => {
+      document.getElementById('movies').addEventListener('movies:updated', () => {
+        const movieTitles = document.querySelectorAll('.movie__title');
+        expect(movieTitles.item(0).textContent).toEqual('-');
+
+        done();
+      });
+
+      favoriteMovies.searchMovies.withArgs('film a').and.returnValues([
+        { id: 444 },
+      ]);
+
+      searchMovies('film a');
+    });
   });
 
   describe('When query is empty', () => {
@@ -133,19 +119,19 @@ describe('Searhing movies', () => {
 
   describe('When no favorite movies could be found', () => {
     it('should show the empty message', (done) => {
-      document.getElementById('movie-search-container')
-        .addEventListener('movies:searched:updated', () => {
-          expect(document.querySelectorAll('.movies__not__found').length).toEqual(1);
-          done();
-        });
+      document.getElementById('movies').addEventListener('movies:updated', () => {
+        expect(document.querySelectorAll('.movie-item__not__found').length).toEqual(1);
+
+        done();
+      });
 
       favoriteMovies.searchMovies.withArgs('film a').and.returnValues([]);
 
       searchMovies('film a');
     });
     it('should not show any movie', (done) => {
-      document.getElementById('movie-search-container').addEventListener('movies:searched:updated', () => {
-        expect(document.querySelectorAll('.movie').length).toEqual(0);
+      document.getElementById('movies').addEventListener('movies:updated', () => {
+        expect(document.querySelectorAll('.movie-item').length).toEqual(0);
         done();
       });
       favoriteMovies.searchMovies.withArgs('film a').and.returnValues([]);
