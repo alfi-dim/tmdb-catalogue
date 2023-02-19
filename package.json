@@ -8,7 +8,7 @@
     "build": "webpack --config webpack.prod.js",
     "serve": "http-server dist",
     "test": "karma start",
-    "e2e": "codeceptjs run --steps"
+    "e2e": "codeceptjs run"
   },
   "keywords": [],
   "author": "your_name <your_email@mail.com>",
