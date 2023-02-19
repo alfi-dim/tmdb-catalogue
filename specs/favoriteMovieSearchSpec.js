@@ -3,6 +3,7 @@ import FavoriteMovieIdb from '../src/scripts/data/favorite-movie-idb';
 
 describe('Searhing movies', () => {
   let presenter;
+  let favoriteMovies;
 
   const searchMovies = (query) => {
     const queryElement = document.getElementById('query');
@@ -22,9 +23,9 @@ describe('Searhing movies', () => {
       `;
   };
   const constructPresenter = () => {
-    spyOn(FavoriteMovieIdb, 'searchMovies');
+    favoriteMovies = spyOnAllFunctions(FavoriteMovieIdb);
     presenter = new FavoriteMovieSearchPresenter({
-      favoriteMovies: FavoriteMovieIdb,
+      favoriteMovies,
     });
   };
 
@@ -42,7 +43,7 @@ describe('Searhing movies', () => {
   it('should ask the model to search for liked movies', () => {
     searchMovies('film a');
 
-    expect(FavoriteMovieIdb.searchMovies).toHaveBeenCalledWith('film a');
+    expect(favoriteMovies.searchMovies).toHaveBeenCalledWith('film a');
   });
 
   it('should show the found movies', () => {
@@ -78,7 +79,7 @@ describe('Searhing movies', () => {
         done();
       });
 
-    FavoriteMovieIdb.searchMovies.withArgs('film a').and.returnValues([
+    favoriteMovies.searchMovies.withArgs('film a').and.returnValues([
       { id: 111, title: 'film abc' },
       { id: 222, title: 'ada juga film abcde' },
       { id: 333, title: 'ini juga boleh film a' },
@@ -97,12 +98,38 @@ describe('Searhing movies', () => {
       done();
     });
 
-    FavoriteMovieIdb.searchMovies.withArgs('film a').and.returnValues([
+    favoriteMovies.searchMovies.withArgs('film a').and.returnValues([
       { id: 111, title: 'film abc' },
       { id: 222, title: 'ada juga film abcde' },
       { id: 333, title: 'ini juga boleh film a' },
     ]);
 
     searchMovies('film a');
+  });
+
+  describe('When query is not empty', () => {
+    // ... Pemangkasan
+  });
+
+  describe('When query is empty', () => {
+    it('should capture the query as empty', () => {
+      searchMovies(' ');
+      expect(presenter.latestQuery.length).toEqual(0);
+
+      searchMovies('    ');
+      expect(presenter.latestQuery.length).toEqual(0);
+
+      searchMovies('');
+      expect(presenter.latestQuery.length).toEqual(0);
+
+      searchMovies('\t');
+      expect(presenter.latestQuery.length).toEqual(0);
+    });
+
+    it('should show all favorite movies', () => {
+      searchMovies('    ');
+      expect(favoriteMovies.getAllMovies)
+        .toHaveBeenCalled();
+    });
   });
 });
